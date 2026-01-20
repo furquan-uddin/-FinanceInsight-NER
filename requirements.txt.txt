@@ -1,0 +1,10 @@
+transformers
+torch
+datasets
+seqeval
+pdfplumber
+pandas
+numpy
+nltk
+matplotlib
+wordcloud

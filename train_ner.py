@@ -1,4 +1,3 @@
-
 """
 Lightweight NER fine-tuning script using spaCy.
 
@@ -6,8 +5,6 @@ Purpose:
 - Auto-annotate financial text using simple heuristics
 - Fine-tune spaCy NER component
 - Persist trained model to disk
-
-Refactored and documented for clarity.
 """
 
 import random
@@ -18,26 +15,35 @@ import pandas as pd
 import spacy
 from spacy.training import Example
 
+# ---------------------------
+# CONFIG
+# ---------------------------
 SPACY_BASE_MODEL = "en_core_web_sm"
 TRAIN_DATA_PATH = "data/raw/financial_news.csv"
 OUTPUT_MODEL_DIR = "trained_model"
 MAX_SAMPLES = 300
 EPOCHS = 5
 
-
+# ---------------------------
+# AUTO LABEL FUNCTION
+# ---------------------------
 def auto_annotate(text: str):
     entities = []
 
-    for m in re.finditer(r'Rs\.?\s?\d+[\,\d]*', text):
+    # MONEY patterns
+    for m in re.finditer(r'Rs\.?\s?\d+[,\d]*', text):
         entities.append((m.start(), m.end(), "MONEY"))
 
+    # ORG patterns (simple heuristic)
     for org in ["TCS", "Infosys", "ICICI", "HDFC", "Reliance", "REC", "BSE"]:
         for m in re.finditer(org, text):
             entities.append((m.start(), m.end(), "ORG"))
 
     return text, {"entities": entities}
 
-
+# ---------------------------
+# MAIN TRAINING PIPELINE
+# ---------------------------
 def main():
     nlp = spacy.load(SPACY_BASE_MODEL)
 
@@ -49,6 +55,8 @@ def main():
         for t in texts
         if auto_annotate(t)[1]["entities"]
     ]
+
+    print("Training samples:", len(train_data))
 
     ner = nlp.get_pipe("ner")
     optimizer = nlp.resume_training()
@@ -64,7 +72,7 @@ def main():
 
     Path(OUTPUT_MODEL_DIR).mkdir(exist_ok=True)
     nlp.to_disk(OUTPUT_MODEL_DIR)
-
+    print(f"Model saved to '{OUTPUT_MODEL_DIR}'")
 
 if __name__ == "__main__":
     main()
